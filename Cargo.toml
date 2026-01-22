@@ -1,0 +1,75 @@
+[package]
+name = "web-app"
+edition = "2024"
+publish = false
+
+[lib]
+crate-type = ["cdylib", "rlib"]
+
+[features]
+# Enable both features by default so rust-analyzer can help us out more.
+# cargo-leptos will automatically disable them as appropriate (see leptos config below)
+default = ["ssr", "hydrate"]
+hydrate = [
+    "dep:console_error_panic_hook",
+    "dep:tracing-subscriber-wasm",
+    "dep:wasm-bindgen",
+    "dep:wasm-bindgen-futures",
+    "leptos/hydrate",
+]
+ssr = [
+    "dep:anyhow",
+    "dep:axum",
+    "dep:axum-extra",
+    "dep:lambda_http",
+    "dep:leptos_axum",
+    "dep:serde_json",
+    "dep:tokio",
+    "leptos/ssr",
+    "leptos_meta/ssr",
+    "leptos_router/ssr",
+]
+
+[dependencies]
+# common
+leptos = { version = "0.8.15", features = ["tracing"] }
+leptos_meta = { version = "0.8.5", features = ["tracing"] }
+leptos_router = { version = "0.8.11", features = ["tracing"] }
+serde = { version = "1", features = ["derive"] }
+
+# frontend only
+console_error_panic_hook = { version = "0.1.7", optional = true }
+tracing-subscriber-wasm = { version = "0.1.0", optional = true }
+wasm-bindgen = { version = "=0.2.106", optional = true }  # keep in sync with rust-builder.dockerfile
+wasm-bindgen-futures = { version = "=0.4.56", optional = true }
+
+# backend only
+anyhow = { version = "1", optional = true }
+axum = { version = "0.8.8", optional = true }
+axum-extra = { version = "0.12.5", features = ["cookie"], optional = true }
+lambda_http = { version = "1.0.2", optional = true }
+leptos_axum = { version = "0.8.7", features = ["tracing"], optional = true }
+serde_json = { version = "1", optional = true }
+tokio = { version = "1", features = ["full"], optional = true }
+
+[package.metadata.leptos]
+lib-profile-release = "wasm-release"
+
+# These options are documented as optional, but the local server doesn't appear to work without them
+bin-features = ["ssr"]
+bin-default-features = false
+lib-features = ["hydrate"]
+lib-default-features = false
+
+# Overridden to "true" at build time.  Not enabled by default because it seems to break SCSS hot-reload
+hash-files = false
+
+server-fn-prefix = "/api"
+
+# Size-optimized profile for the WASM bundle in release mode
+[profile.wasm-release]
+inherits = "release"
+opt-level = 'z'
+lto = true
+codegen-units = 1
+panic = "abort"
